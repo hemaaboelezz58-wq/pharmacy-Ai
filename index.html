@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ai DrAboElEzz | مساعدك الذكي</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-dark: #131314;
+  --bg-input: #1e1f20;
+  --text-main: #e3e3e3;
+  --text-dim: #b4b4b4;
+  --accent: #8ab4f8;
+  --grad: linear-gradient(90deg, #4285f4, #9b72cb, #d96570);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Cairo', sans-serif; background: var(--bg-dark); color: var(--text-main); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+
+/* Header */
+header { height: 60px; display: flex; align-items: center; justify-content: space-between; padding: 0 1.5rem; z-index: 100; }
+.logo { font-weight: 900; font-size: 1.4rem; color: #8ab4f8; display: flex; align-items: center; gap: 8px; }
+.user-action { display: flex; align-items: center; gap: 20px; }
+.login-btn { background: #131314; color: white; border: 1px solid #3c4043; padding: 6px 18px; border-radius: 4px; font-size: 0.85rem; cursor: pointer; }
+
+/* Chat Area */
+.chat-window { flex: 1; overflow-y: auto; display: flex; flex-direction: column; align-items: center; padding-top: 40px; }
+.container { width: 100%; max-width: 760px; padding: 1rem; }
+
+#messageList { display: flex; flex-direction: column; gap: 2rem; width: 100%; padding-bottom: 120px; }
+.msg-row { display: flex; gap: 15px; width: 100%; }
+.avatar { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; background: #3c4043; font-size: 0.9rem; }
+.msg-row.ai .avatar { background: var(--grad); }
+.msg-content { line-height: 1.6; font-size: 1rem; padding-top: 4px; color: var(--text-main); }
+
+/* Input Box - Exact Match to Screenshot */
+.bottom-container { position: fixed; bottom: 0; width: 100%; background: var(--bg-dark); padding: 20px 0; }
+.input-wrapper { max-width: 760px; margin: 0 auto; padding: 0 1rem; position: relative; }
+.input-box { background: var(--bg-input); border-radius: 28px; padding: 12px 24px; display: flex; align-items: center; gap: 12px; border: 1px solid transparent; }
+input { flex: 1; background: none; border: none; color: white; outline: none; font-family: 'Cairo'; font-size: 1rem; text-align: right; }
+.input-icons { display: flex; gap: 15px; color: var(--text-dim); font-size: 1.2rem; cursor: pointer; }
+
+.disclaimer { text-align: center; font-size: 0.75rem; color: #80868b; margin-top: 15px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="user-action">
+    <button class="login-btn">دخول</button>
+    <a href="https://wa.me/201129622767" style="text-decoration:none; color:var(--text-dim); font-size:0.9rem;">تواصل مع د. أبوالعز</a>
+  </div>
+  <div class="logo">Ai DrAboElEzz</div>
+</header>
+
+<div class="chat-window" id="chatWindow">
+  <div class="container">
+    <div id="messageList">
+      <!-- الرسائل تظهر هنا -->
+    </div>
+  </div>
+</div>
+
+<div class="bottom-container">
+  <div class="input-wrapper">
+    <div class="input-box">
+      <div class="input-icons"><span>+</span></div>
+      <input type="text" id="userInput" placeholder="...Ai DrAboElEzz اسأل">
+      <div class="input-icons" onclick="handleChat()"><span style="color:var(--accent)">✦</span></div>
+    </div>
+    <p class="disclaimer">قد يخطئ الذكاء الاصطناعي، يرجى مراجعة المصادر الطبية الموثوقة.</p>
+  </div>
+</div>
+
+<script>
+// المفتاح البرمجي تم تحديث طريقة الربط لتجنب أخطاء الاتصال
+const API_KEY = "AIzaSyC6XaDiYXSCjSxNYwDnqWN3bDTpqhhzzPM";
+const API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent";
+
+async function handleChat() {
+    const input = document.getElementById('userInput');
+    const text = input.value.trim();
+    if (!text) return;
+
+    const list = document.getElementById('messageList');
+    const windowDiv = document.getElementById('chatWindow');
+
+    // إضافة رسالة المستخدم
+    list.innerHTML += `
+        <div class="msg-row user">
+            <div class="msg-content">${text}</div>
+            <div class="avatar">👤</div>
+        </div>
+    `;
+
+    input.value = '';
+    windowDiv.scrollTo(0, windowDiv.scrollHeight);
+
+    // رسالة مؤقتة للذكاء الاصطناعي
+    const tempId = 'ai_' + Date.now();
+    list.innerHTML += `
+        <div class="msg-row ai" id="${tempId}">
+            <div class="avatar">✨</div>
+            <div class="msg-content">جارٍ التفكير...</div>
+        </div>
+    `;
+
+    try {
+        const response = await fetch(`${API_URL}?key=${API_KEY}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                contents: [{ parts: [{ text: text }] }]
+            })
+        });
+
+        if (!response.ok) throw new Error('Network error');
+
+        const data = await response.json();
+        const aiResponse = data.candidates[0].content.parts[0].text;
+
+        document.getElementById(tempId).querySelector('.msg-content').innerText = aiResponse;
+        windowDiv.scrollTo(0, windowDiv.scrollHeight);
+
+    } catch (error) {
+        document.getElementById(tempId).querySelector('.msg-content').innerText = "حدث خطأ في الاتصال. تأكد من أن مفتاح الـ API مفعل وصحيح.";
+    }
+}
+
+document.getElementById('userInput').addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') handleChat();
+});
+</script>
+
+</body>
+</html>
